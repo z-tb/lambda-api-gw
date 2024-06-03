@@ -138,7 +138,7 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
 # rest API
 # = = = = = = = = = = = = =  = = = = = = = = = = = = =  = = = = = = = = = = = = =  = = = = = = = = = = = = = 
 
-resource "aws_api_gateway_rest_api" "example_api" {
+resource "aws_api_gateway_rest_api" "my_api_gw" {
   name        = "${local.lambda_name}-API-GATEWAY"
   description = "API gateway for lambda function ${local.lambda_name}"
   
@@ -149,36 +149,64 @@ resource "aws_api_gateway_rest_api" "example_api" {
   }
 }
 
-resource "aws_api_gateway_resource" "example_resource" {
-  rest_api_id = aws_api_gateway_rest_api.example_api.id
-  parent_id   = aws_api_gateway_rest_api.example_api.root_resource_id
+resource "aws_api_gateway_resource" "my_gw_resource" {
+  rest_api_id = aws_api_gateway_rest_api.my_api_gw.id
+  parent_id   = aws_api_gateway_rest_api.my_api_gw.root_resource_id
   path_part   = "example"
   
 }
 
 resource "aws_api_gateway_method" "example_method" {
-  rest_api_id   = aws_api_gateway_rest_api.example_api.id
-  resource_id   = aws_api_gateway_resource.example_resource.id
+  rest_api_id   = aws_api_gateway_rest_api.my_api_gw.id
+  resource_id   = aws_api_gateway_resource.my_gw_resource.id
   http_method   = "GET"
+
+  # allow anyone to call the api endpoint
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "example_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.example_api.id
-  resource_id             = aws_api_gateway_resource.example_resource.id
+resource "aws_api_gateway_integration" "my_gw_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.my_api_gw.id
+  resource_id             = aws_api_gateway_resource.my_gw_resource.id
   http_method             = aws_api_gateway_method.example_method.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.my_lambda_function.invoke_arn
   
+  
 }
 
-resource "aws_lambda_permission" "example_permission" {
+resource "aws_lambda_permission" "my_lambda_permission" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.my_lambda_function.function_name
   principal     = "apigateway.amazonaws.com"
 
   # This depends on the API Gateway stage created by the integration, replace "example" with your actual stage name
-  source_arn = "${aws_api_gateway_rest_api.example_api.execution_arn}/example/*/*"
+  source_arn = "${aws_api_gateway_rest_api.my_api_gw.execution_arn}/example/*/*"
+}
+
+resource "aws_lambda_permission" "api_gateway_invoke_permission" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.my_lambda_function.arn
+  principal     = "apigateway.amazonaws.com"
+
+  #  API Gateway resource arn
+  source_arn = "arn:aws:execute-api:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.my_api_gw.id}/*/*/*"
+}
+
+# Define the API Gateway deployment
+resource "aws_api_gateway_deployment" "my_api_gw_deployment" {
+  depends_on = [
+    aws_api_gateway_integration.my_gw_integration,
+    aws_api_gateway_method.example_method
+  ]
+  rest_api_id = aws_api_gateway_rest_api.my_api_gw.id
+  stage_name  = "test"
+}
+
+# Output the URL of the deployed API Gateway
+output "api_gateway_url" {
+  value = aws_api_gateway_deployment.my_api_gw_deployment.invoke_url
 }
