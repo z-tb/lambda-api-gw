@@ -1,17 +1,13 @@
+* the lambda src and layers directory structure. Install python libraries
+* python modules would be installed via: cd lambda_functions && pip install -r requirements.txt --target layers/
 ```bash
 lambda_functions/
-│
-├── layers/
-│   ├── Gemfile
-│   ├── Gemfile.lock
-│   └── vendor/
-│       ├── bundler/
-│       └── ruby/
-│           └── 2.7.0/
-│               └── gems/
-│                   ├── aws-sdk-x.x.x/
-│                   └── ... other gems ...
-│
-└── src/
-    └── myfile.rb
+├── requirements.txt
+├── my_lambda_function.zip
+├── my_lambda_layer.zip
+├── layers
+│   └── python
+│       └── some_sdk
+└── src
+    └── aws-api-gateway.py
 ```

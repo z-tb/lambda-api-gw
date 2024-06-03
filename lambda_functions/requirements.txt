@@ -1,0 +1,4 @@
+# example: install python modules for the lambda function
+# pip install -r requirements.txt --target layers/
+requests==2.31.0
+urllib3==1.26.18
