@@ -1,3 +1,20 @@
+/* to test the api gateway, generate an API key and:
+
+$ curl -X POST "https://4pb1r7y0l9.execute-api.us-west-2.amazonaws.com/test/example" \
+     -H "x-api-key: KIxVPhYcBq7RvZUNiZBpD8jG4vjvZPi46anrN4NX" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "firstName": "John",
+           "lastName": "Doe",
+           "city": "San Francisco",
+           "state": "CA",
+           "zip": "94103"
+         }'
+{"message": "Hello, John Doe from San Francisco, CA 94103! Your form was submitted successfully."}
+
+
+*/
+
 # account id for the lambda role policy
 data "aws_caller_identity" "current" {}
 
