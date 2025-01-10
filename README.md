@@ -9,7 +9,7 @@ This project sets up an AWS Lambda function and an API Gateway to handle HTTP re
   - Sets up an API Gateway with a POST method to invoke the Lambda function.
   - Configures IAM roles and policies for the Lambda function.
   - Creates a CloudWatch Log Group for logging Lambda function output.
-  - Ensures secure and sanitized input handling.
+  - Sanitizes and validates input data.
 
 - **Lambda Function**:
   - Processes form data submitted via the API Gateway.
@@ -40,6 +40,8 @@ This project sets up an AWS Lambda function and an API Gateway to handle HTTP re
    terraform apply
    ```
 
+   Makefiles are used to implement `dev` and `prod` tfvars, as well as update/install the python modules in the lambda layer.
+
 4. **Test the API**:
    Use `curl` or any API testing tool to send a POST request to the API Gateway endpoint with the required form data.
    ```sh
@@ -57,26 +59,24 @@ This project sets up an AWS Lambda function and an API Gateway to handle HTTP re
 
 ## Security Considerations
 - The Lambda function sanitizes and validates input data to prevent injection attacks and other malicious input.
-- The API Gateway is secured with API keys to control access.
+- The API Gateway is secured with API keys to control access (you'll need to create a key after provisioning).
 - IAM roles and policies are configured to grant the Lambda function the necessary permissions while following the principle of least privilege.
 
-## Contributing
-Feel free to contribute to this project by submitting issues and pull requests.
-
 ## License
-This project is licensed under the MIT License. See the LICENSE file for more information.
+This project is licensed under the GNU GPL v3 License. See the LICENSE file for more information.
 
 
 * the lambda src and layers directory structure. Install python libraries
 * python modules would be installed via: cd lambda_functions && pip install -r requirements.txt --target layers/
 ```bash
 lambda_functions/
-├── requirements.txt
-├── my_lambda_function.zip
-├── my_lambda_layer.zip
+├── Makefile                << setup the modules using `make install`
+├── requirements.txt        << add modules needed in the lambda layer
+├── my_lambda_function.zip  << created by terraform
+├── my_lambda_layer.zip     << ...same here
 ├── layers
 │   └── python
 │       └── some_sdk
 └── src
-    └── aws-api-gateway.py
+    └── aws-api-gateway.py << uploaded via `terraform apply`
 ```
