@@ -1,9 +1,7 @@
-
 # Define the Lambda IAM role
 resource "aws_iam_role" "lambda_role" {
   name = "${var.name_tag}-LAM-ROLE"
-
-  # Allow Lambda to use AssumeRole
+  
   assume_role_policy = jsonencode({
     Version   = "2012-10-17",
     Statement = [
@@ -17,90 +15,6 @@ resource "aws_iam_role" "lambda_role" {
     ]
   })
 
-  # Attach a policy that allows writing to CloudWatch Logs
-  # note: Terraform docs open this up a lot
-  # https://registry.terraform.io/providers/hashicorp/aws/3.56.0/docs/resources/lambda_function
-  inline_policy {
-    name = "${var.name_tag}-CW-POL"
-
-    policy = jsonencode({
-      Version   = "2012-10-17",
-      Statement = [
-        {
-          Action   = ["logs:CreateLogGroup", 
-                      "logs:CreateLogStream",
-                      "logs:PutLogEvents"],
-          Effect   = "Allow",
-          Resource = "arn:aws:logs:*:*:*"
-        }
-      ]
-    })
-  }
-
-
-  # Allow access to the specified Secrets Manager secret
-  # follow Resource with "*" because the ARN for the secret has a few AWS generated characters after the actual name
-  /*
-  inline_policy {
-    name = "${var.name_tag}-SM-POL"
-
-  
-    policy = jsonencode({
-      Version   = "2012-10-17",
-      Statement = [
-        {
-          Action   = "secretsmanager:GetSecretValue",
-          Effect   = "Allow",
-          Resource = "${local.slack_secret_arn}*"
-        }
-      ]
-    })
-  }*/
-
-  # Allow access to SSM Parameter Store with a specific prefix
-  /*
-  inline_policy {
-    name = "${var.name_tag}-SSM-POL"
-
-    policy = jsonencode({
-      Version = "2012-10-17",
-      Statement = [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ssm:DescribeParameters"
-            ],
-            "Resource": "*"
-        },
-        {
-          Action   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"],
-          Effect   = "Allow",
-          Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*",
-        },
-      ]
-    })
-  }*/
-  
-
-  # Cost Usage/Explorer
-  /*
-  # Resource needs to be "*" here as that is all that is allowed in the policy editor
-  inline_policy {
-    name = "${var.name_tag}-CE-POL"
-
-    policy = jsonencode({
-      Version = "2012-10-17",
-      Statement = [
-        {
-          Action   = ["ce:GetCostAndUsage", "ce:GetCostForecast"],
-          Effect   = "Allow",
-          Resource = "*",
-        },
-      ]
-    })
-  }*/
-    
-
   tags = {
     Name        = var.name_tag
     Owner       = var.owner_tag
@@ -108,3 +22,119 @@ resource "aws_iam_role" "lambda_role" {
   }
 }
 
+
+# CloudWatch Logs policy
+resource "aws_iam_policy" "lambda_cloudwatch_policy" {
+  name        = "${var.name_tag}-CW-POL"
+  description = "IAM policy for CloudWatch Logs"
+
+  policy = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [
+      {
+        Action   = [
+          "logs:CreateLogGroup", 
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect   = "Allow",
+        Resource = [
+          "${aws_cloudwatch_log_group.lambda_logs.arn}",
+          "${aws_cloudwatch_log_group.lambda_logs.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
+
+# Attach CloudWatch policy to role
+resource "aws_iam_role_policy_attachment" "lambda_cloudwatch" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_cloudwatch_policy.arn
+}
+
+
+# Secrets Manager policy (commented out but updated format)
+/*
+resource "aws_iam_policy" "lambda_secretsmanager_policy" {
+  name        = "${var.name_tag}-SM-POL"
+  description = "IAM policy for Secrets Manager access"
+
+  policy = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [
+      {
+        Action   = "secretsmanager:GetSecretValue",
+        Effect   = "Allow",
+        Resource = "${local.slack_secret_arn}*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_secretsmanager" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_secretsmanager_policy.arn
+}
+*/
+
+# SSM Parameter Store policy (commented out but updated format)
+/*
+resource "aws_iam_policy" "lambda_ssm_policy" {
+  name        = "${var.name_tag}-SSM-POL"
+  description = "IAM policy for SSM Parameter Store access"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
+        Action    = ["ssm:DescribeParameters"],
+        Resource  = "*"
+      },
+      {
+        Action    = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ],
+        Effect    = "Allow",
+        Resource  = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_ssm" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_ssm_policy.arn
+}
+*/
+
+# Cost Explorer policy (commented out but updated format)
+/*
+resource "aws_iam_policy" "lambda_ce_policy" {
+  name        = "${var.name_tag}-CE-POL"
+  description = "IAM policy for Cost Explorer access"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action    = [
+          "ce:GetCostAndUsage",
+          "ce:GetCostForecast"
+        ],
+        Effect    = "Allow",
+        Resource  = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_ce" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_ce_policy.arn
+}
+*/

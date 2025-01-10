@@ -78,3 +78,11 @@ variable "lambda_handler" {
 }
 
 
+# for api-gateway-sample
+#variable "app_contact" {
+#  description = "The contact email for the app"
+#  type = string
+#  default = "tmb"
+#}
+
+
