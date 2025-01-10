@@ -1,7 +1,7 @@
 /* to test the api gateway, generate an API key and:
 
 $ curl -X POST "https://4pb1r7y0l9.execute-api.us-west-2.amazonaws.com/test/example" \
-     -H "x-api-key: KIxVPhYcBq7RvZUNiZBpD8jG4vjvZPi46anrN4NX" \
+     -H "x-api-key: KI...4NX" \
      -H "Content-Type: application/json" \
      -d '{
            "firstName": "John",
